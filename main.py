@@ -76,14 +76,61 @@ class weatherApp(QWidget):
 
     def get_tiempo(self):
         print("El boton funciona")
-        api_key = ""
-        pass
+        api_key = "x"
+        city = self.city_input.text()
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}"
+        try:    
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+
+            if data["cod"] == 200:
+                self.display_tiempo(data)
+        except requests.exceptions.HTTPError as http_error:
+            match response.status_code:
+                case 400:
+                    self.display_error("Check your input")
+                case 401:
+                    self.display_error("Invalid API key")
+                case 403:
+                    self.display_error("Access denied")
+                case 404:
+                    self.display_error("Not found")
+                case 500:
+                    self.display_error("Internal server error")
+                case 502:
+                    self.display_error("Bad gateway")
+                case 503:
+                    self.display_error("Service unavailable")
+                case 504:
+                    self.display_error("Gateway timeout")
+                case _:
+                    self.display_error(f"Error {http_error}")
+            
+        except requests.exceptions.ConnectionError:
+            self.display_error("Connection Error")
+        except requests.exceptions.Timeout:
+            self.display_error("Timeout Error")
+        except requests.exceptions.TooManyRedirects:
+            self.display_error("Too many redirects")
+        except requests.exceptions.RequestException as req_error:
+            self.display_error(f"Request Error: {req_error}")
+    
     def display_error(self, message):
-        pass
+        self.temp_label.setStyleSheet("font-size: 15px")
+        self.temp_label.setText(message)
+        self.descripcion_tiempo.clear()
+    
     def display_tiempo(self,data):
-        pass
+        self.temp_label.setStyleSheet("font-size: 70px")
+        temp_k = data["main"]["temp"]
+        temp_c = temp_k - 273.15
+        self.temp_label.setText(f"{temp_c:.0f}°C")
+        weather_description = data["weather"][0]["description"]
+        self.descripcion_tiempo.setText(weather_description)
+
 if __name__ == "__main__":
-    print("hola")
+    print("App has started")
     app = QApplication(sys.argv)
     weather_app = weatherApp()
     weather_app.show()
